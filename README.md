@@ -1,4 +1,4 @@
-# Noise2Noise and ImageDetection
+﻿# Noise2Noise and ImageDetection
 
 This is an unofficial and partial Keras implementation of "Noise2Noise: Learning Image Restoration without Clean Data" [1].
 
@@ -8,10 +8,8 @@ There are several things different from the original paper
 - Model (original: RED30 [3], this repository: SRResNet [4] or UNet [5])
 
 ## Developers
-- 이윤호
-- 이재우
-- 전종혁
-- 채현욱
+- 노연우
+- 배재현
 
 ## Dependencies
 - Keras >= 2.1.2, TensorFlow, NumPy, OpenCV
