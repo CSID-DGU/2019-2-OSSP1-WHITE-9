@@ -7,10 +7,10 @@ from noise_model import get_noise_model
 import os
 from PIL import Image
 import pytesseract
+# import boto3
 pytesseract.pytesseract.tesseract_cmd = r'C:/Program Files/Tesseract-OCR/tesseract'
 
-
-
+# s3 = boto3.resource('s3')
 def get_args(): #콘솔로부터 인자를 받아오는 함수
     parser = argparse.ArgumentParser(description="Test trained model",
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -32,6 +32,14 @@ def get_image(image):   #이미지를 받아오는 함수
     image = np.clip(image, 0, 255)
     return image.astype(dtype=np.uint8)
 
+def get_percentage(origin, other):
+    count1=0
+    count2=0
+    for letter in origin:
+        count1 = count1 + 1
+        if letter in other:
+            count2 = count2 + 1
+    return (count2/count1)*100
 
 def main(): 
     # get_args() 함수로부터 인자를 받아옴
@@ -50,35 +58,50 @@ def main():
 
     for image_path in image_paths:  #image_path 내에 있는 모든 이미지 파일을 순차적으로 작업함
         image = cv2.imread(str(image_path))
+        data = open(str(image_path), 'rb')
+        # s3.Bucket('my-bucket').put_object(Key='test.jpg', Body=data)
         h, w, _ = image.shape
         image = image[:(h // 16) * 16, :(w // 16) * 16] 
         h, w, _ = image.shape
         
         out_image = np.zeros((h, w * 3, 3), dtype=np.uint8)
-        noise_image = val_noise_model(image)
-        pred = model.predict(np.expand_dims(noise_image, 0))
-        denoised_image = get_image(pred[0])
+        denoised_image = val_noise_model(image)
+        pred = model.predict(np.expand_dims(denoised_image, 0))
+        noise_image = get_image(pred[0])
  
-        #out_image에 imgae, noise_image, denoised_image를 넣음.(사용하지 않음)
+        cv2.imwrite("noised.jpg", noise_image)
+        cv2.imwrite("denoised.jpg", denoised_image) #denoised된 이미지를 기본경로에 저장
+        #경로 내에 존재하는 denoised.jpg파일을 tesseract로 불러옴
+        origin = pytesseract.image_to_string(image, lang='eng')
+        data_noised = pytesseract.image_to_string(Image.open('noised.jpg'), lang='eng')
+        data_denoised = pytesseract.image_to_string(Image.open('denoised.jpg'), lang='eng')
+        # 불러온 image 내의 문자열을 data 변수에 string으로 입력
+
+        f = open("result_noised.txt", 'w', encoding='UTF8')
+        f.write(data_noised)   #result.txt파일 안에 해당 string을 저장하고 기본 경로에 저장.
+        f.close()
+
+        f = open("result_denoised.txt", 'w', encoding='UTF8')
+        f.write(data_denoised)   #result.txt파일 안에 해당 string을 저장하고 기본 경로에 저장.
+        f.close()
+
+        percent_noise = get_percentage(origin, data_noised)
+        percent_denoised = get_percentage(origin, data_denoised)
+        cv2.putText(noise_image, "Noised Image " + " : " + str(percent_noise) + "%", (0, int(h-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
+        cv2.putText(denoised_image, "Denoised Image " + " : " + str(percent_denoised) + "%", (0, int(h-10)), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0,0,255), 2)
+
+        #out_image에 image, noise_image, denoised_image를 넣음.(사용하지 않음)
         execution_path = os.getcwd()
         out_image[:, :w] = image
         out_image[:, w:w * 2] = noise_image
         out_image[:, w * 2:] = denoised_image
         #cv2.imwrite("denoised.jpg", out_image)
-        cv2.imwrite("denoised.jpg", denoised_image) #denoised된 이미지를 기본경로에 저장
-        #img = cv2.imread(execution_path, "denoised.jpg")
-        #경로 내에 존재하는 denoised.jpg파일을 tesseract로 불러옴
-        data = pytesseract.image_to_string(Image.open('denoised.jpg'), lang='eng')
-        #불러온 image 내의 문자열을 data 변수에 string으로 입력
-        f = open("result.txt", 'w', encoding='UTF8')
-        f.write(data)   #result.txt파일 안에 해당 string을 저장하고 기본 경로에 저장.
-        f.close()
+        cv2.imshow("result", out_image)
+        key = cv2.waitKey(-1)
+        # "q": quit
+        if key == 113:
+            return 0
 
-        
-        if args.output_dir: #output_path를 입력받았다면 그 경로에 저장
-            cv2.imwrite("denoised.png", out_image)
-        #else:
-            #cv2.imshow("result", out_image)
 
 if __name__ == '__main__':
     main()

@@ -4,10 +4,10 @@ import random
 import numpy as np
 import cv2
 
-#노이즈를 주는 함수이기 때문에 기존 Noise2Noise코드에서.
+#노이즈를 주는 함수이기 때문에 기존 Noise2Noise코드에서 따왔습니다.
 
-#Guassian, impulse, text 노이즈를 주기 위한 함수
-def get_noise_model(noise_type="gaussian,0,50"):
+#Gaussian, impulse, text 노이즈를 주기 위한 함수
+def get_noise_model(noise_type="gaussian,0,10000001"):
     tokens = noise_type.split(sep=",")
 
     if tokens[0] == "gaussian":

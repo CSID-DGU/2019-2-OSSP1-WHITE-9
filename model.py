@@ -5,8 +5,11 @@ from keras.layers.normalization import BatchNormalization
 from keras.callbacks import Callback
 from keras import backend as K
 import tensorflow as tf
+# import boto3
 
-#기존 Noise2Noise모델에서 따온 코드입니다.
+# s3 = boto3.resource('s3')
+# for bucket in s3.buckets.all():
+#     print(bucket.name)  
 
 class L0Loss:
     def __init__(self):
